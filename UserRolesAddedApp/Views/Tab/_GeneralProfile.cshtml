@@ -1,0 +1,80 @@
+﻿
+@model UserRolesAddedApp.Models.DAL.Output.User
+
+<h1>Profile</h1>
+@Scripts.Render("~/bundles/jquery")
+@Scripts.Render("~/bundles/tab")
+
+@using (Html.BeginForm("UpdateUser","Tab",FormMethod.Post,null))
+
+{
+@Html.AntiForgeryToken()
+    @(Html.ValidationSummary(true))
+  
+    <div>
+        <table>
+            <tr>
+                <th>@Html.LabelFor(model => model.UserName)</th>
+                <td>@Html.TextBoxFor(model => model.UserName, new {id = "userNameTbx", @readonly = "readonly"})</td>
+                  @Html.ValidationMessageFor(model=>model.UserName)
+                @Html.HiddenFor(model=>model.Id)
+            </tr>
+
+            <tr>
+                <th>@Html.LabelFor(model => model.FirstName)</th>
+                <td>@Html.TextBoxFor(model => model.FirstName, new {id = "FirstNameTbx", @readonly = "readonly"})</td>
+                @Html.ValidationMessageFor(model => model.FirstName)
+            </tr>
+
+
+            <tr>
+                <th>@Html.LabelFor(model => model.LastName)</th>
+                <td>@Html.TextBoxFor(model => model.LastName, new {id = "LastNameTbx", @readonly = "readonly"})</td>
+                  @Html.ValidationMessageFor(model => model.LastName)
+            </tr>
+
+            <tr>
+                <th>@Html.LabelFor(model => model.Email)</th>
+                <td>@Html.TextBoxFor(model => model.Email, new { id = "emailTbx", @readonly = "readonly" })</td>
+                   @Html.ValidationMessageFor(model => model.Email)
+            </tr>
+
+            <tr>
+                <td></td>
+                <td></td>
+            </tr>
+        </table>
+       
+         <div id="foroperation">
+
+
+            <div id="foredit">
+                <input type="button" id="editButton" value="Edit" name="userEditButton"  />
+            </div>
+
+            <div id="forsave" class="hidden">
+                <input type="submit" id="saveButton" value="Save" name="userSaveButton"  />
+                <input type="button" id="cancelButton" name="userCancelButton" value="Cancel"  />
+            </div>
+
+        </div>
+    </div>
+}
+<script>
+    $("#editButton").click(function () {
+       $('#editButton').hide();
+       $ ('#forsave').removeClass('hidden');
+       $('#userNameTbx').removeAttr("readonly", "readonly");
+       $('#FirstNameTbx').removeAttr("readonly", "readonly");
+       $('#LastNameTbx').removeAttr("readonly", "readonly");
+       $('#emailTbx').removeAttr("readonly", "readonly");
+
+    });
+
+
+
+
+
+
+
+</script>

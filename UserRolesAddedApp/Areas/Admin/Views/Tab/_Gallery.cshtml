@@ -1,0 +1,167 @@
+﻿
+<script src="~/Scripts/Custom/dropzone.js"></script>
+<script src="~/Scripts/Custom/WebSite/webService.js"></script>
+
+@model UserRolesAddedApp.Models.DAL.Output.User
+<h2> File Upload</h2>
+@using (Html.BeginForm("Index", "Tab", null, FormMethod.Post, new { enctype = "multipart/form-data" }))
+{
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true)
+
+
+    <fieldset>
+
+        @if (Model.Id > 0)
+        {
+            <div class="row">
+
+                <div class="dropzone" id="ImageDropZone">
+
+
+                </div>
+
+            </div>
+        }
+
+
+    </fieldset>
+
+
+    <footer>
+        @if (ViewBag.Title == "Delete")
+        {
+            <button type="submit" value="Delete" class="btn btn-primary">Delete</button>
+        }
+        else if (ViewBag.Title == "Edit")
+        {
+            if (User.IsInRole("Student") || User.IsInRole("Teacher"))
+            {
+            <button type="submit" value="Save" class="btn btn-primary">Save</button>
+            }
+        }
+        else if (ViewBag.Title == "Create")
+        {
+                <button type="submit" value="Create" class="btn btn-primary">Save</button>
+            }
+        else if (ViewBag.Title == "Details")
+        {
+            if (User.IsInRole("Student") || User.IsInRole("Teacher"))
+            {
+            @*@Html.ActionLink("Edit", "Edit", new { controller = "Tab", id = Model.Id }, new { @class = "btn btn-primary" })*@
+                }
+        }
+        @Html.ActionLink("Cancel", "Index", new { controller = "Tab" }, new { @class = "btn btn-default" })
+    </footer>
+
+
+
+
+}
+
+
+<script>
+    $(document).ready(function() {
+        var userId=@Model.Id;
+        var pageView = '@ViewBag.Title';
+        var caption = "";
+        Dropzone.autoDiscover = true;
+        Dropzone.options.ImageDropZone = {
+            url: "/Tab/SaveUploadedFile",
+            addRemoveLinks: false,
+            params:{UserId:userId,UserName:$("#Name").attr("value")},
+            maxFilesize: 5,
+            dictResponseError: 'Error uploading file!',
+            init: function() {
+                this.on("complete", function(data) {
+                    var res = eval('(' + data.xhr.responseText + ')');
+                    data.ImageId = res.InsertedImageId;
+                    data.IsPrimary = 0;
+                    data.IsLogo = 0;
+                    data.caption = "";
+                });
+
+                var me = this;
+                callWebService("Tab/GetUploadedFile?UserId="+userId, null, 'GET', function(response) {
+                    var uploadedImage = response.data.UploadedFiles;
+                    for (var i = 0; i < uploadedImage.length; i++) {
+                        var mockImage = { name: uploadedImage[i].imageName, size: uploadedImage[i].imageSize, ImageId: uploadedImage[i].imageId, IsPrimary: uploadedImage[i].isPrimary, IsLogo: uploadedImage[i].isLogo, Caption: uploadedImage[i].caption };
+
+                        me.emit("addedfile", mockImage);
+                        me.emit("thumbnail", mockImage, baseUrl + "/Images/Tab/OriginalSize/" + "/" + uploadedImage[i].imageName);
+                    };
+                });
+
+
+                this.on("addedfile", function(file) {
+                    console.log("aasasas",file);
+                    if(pageView == 'Details') return true;
+                    caption = file.Caption == null ?"" : file.Caption;
+                    var rdoPrimaryImage = Dropzone.createElement('<div>Primary Image <input type="radio" name="rdoPrimaryImage" ' + (file.IsPrimary?"checked=true":"") + '></input></div>');
+                    var rdoLogoImage = Dropzone.createElement('<div>Logo Image <input type="radio" name="rdoLogoImage" ' + (file.IsLogo?"checked=true":"") + '></input></div>');
+                    var txtImageCaption = Dropzone.createElement('<div><textarea id="'+file.ImageId+'_Caption" style="width: 139px; height: 24px;" placeholder="Caption">'+caption+'</textarea></div>');
+                    var btnSaveCaption =  Dropzone.createElement('<div><input type="button" value="save"></input></div>');
+                    rdoPrimaryImage.addEventListener("click", function(e) {
+                        e.stopPropagation();
+                        callWebService("Tab/SetPrimaryImage?ImageId=" + file.ImageId+"&UserId="+userId,null,'GET',function(response){
+                            console.log(response.data.Message);
+                        });
+                    });
+
+                    rdoLogoImage.addEventListener("click", function(e) {
+                        e.stopPropagation();
+                        callWebService("Tab/SetLogoImage?ImageId=" + file.ImageId+"&UserId="+userId,null,'GET',function(response){
+                            console.log(response.data.Message);
+                        });
+                    });
+
+                    btnSaveCaption.addEventListener("click", function(e) {
+                        e.stopPropagation();
+                        var caption = $("#"+file.ImageId+"_Caption").val();
+                        if(caption == null) caption="";
+                        console.log("caption",caption);
+                        callWebService("Tab/SetImageCaption?ImageId=" + file.ImageId + "&Caption="+caption,null,'GET',function(response){
+                        });
+                    });
+
+
+
+                    file.previewElement.appendChild(rdoPrimaryImage);
+                    file.previewElement.appendChild(rdoLogoImage);
+                    file.previewElement.appendChild(txtImageCaption);
+                    // Create the remove button
+                    var removeButton = Dropzone.createElement('<button class="btn btn-danger btn-sm"> Remove file </button>');
+
+                    // Capture the Dropzone instance as closure.
+                    var _this = this;
+
+                    // Listen to the click event
+                    removeButton.addEventListener("click", function(e) {
+                        // Make sure the button click doesn't submit the form:
+                        e.preventDefault();
+                        e.stopPropagation();
+                        if(confirm("Are you sure you want to remove this image")){
+                            // Remove the file preview.
+                            _this.removeFile(file);
+
+                            callWebService("Tab/DeleteUploadedFile?ImageId=" + file.ImageId,null,'GET',function(response){
+                                console.log(response.data.Message);
+                            });
+                        }
+
+                    });
+
+                    // Add the button to the file preview element.
+                    file.previewElement.appendChild(removeButton);
+                    file.previewElement.appendChild(btnSaveCaption);
+
+                });
+
+            }
+        };
+
+
+            
+        
+    });
+</script>
